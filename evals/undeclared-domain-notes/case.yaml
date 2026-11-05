@@ -9,8 +9,8 @@ context:
   scaffold_script: setup.sh
 execution:
   prompt: |
-    Review this repository's memory with the agent-kit update-memory skill, then its
-    rules with the agent-kit update-rules skill.
+    Review this repository's memory with the agent-leash update-memory skill, then its
+    rules with the agent-leash update-rules skill.
     Everything you would ask approval for is approved in advance. If asked which notes
     are domains: billing.md and inventory.md both are.
     Do not write a commit policy and do not commit.

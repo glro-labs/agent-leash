@@ -8,8 +8,8 @@ context:
   scaffold_script: setup.sh
 execution:
   prompt: |
-    Map this repository's memory with the agent-kit memory skill (full pass), then write
-    its rules with the agent-kit rules skill (full pass).
+    Map this repository's memory with the agent-leash memory skill (full pass), then write
+    its rules with the agent-leash rules skill (full pass).
     Everything you would ask approval for is approved in advance. Commit policy: the
     agent may commit on its own, one-line conventional commits in English, never push.
     Do not ask business questions; record them as open questions in the notes.

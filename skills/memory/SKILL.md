@@ -14,12 +14,12 @@ want a smaller cut.
 
 - **No argument** — full bootstrap: phases 0–4 below, then phase 6. If the catalog
   already exists, run only the phases whose output is missing; checking the notes that
-  exist against the code is `/agent-kit:update-memory`.
+  exist against the code is `/agent-leash:update-memory`.
 - **An area** (`$ARGUMENTS`: a module, directory or subject) — phase 5 for that area
   only, then phase 6 to hook the note into the index. Read `MEMORY.md` first: if a note
   already covers the area, deepen that one instead of creating a sibling.
 
-Run `/agent-kit:scaffold` first if `.agents/` does not exist. Settle the language
+Run `/agent-leash:scaffold` first if `.agents/` does not exist. Settle the language
 (next section) before anything else.
 
 **Before writing the first note**, make sure the anti-drift rule exists — a catalog
@@ -37,7 +37,7 @@ overwrite an existing one.
 The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
 line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
 do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-kit:scaffold` does (propose from README, code comments and `git log` subjects,
+`/agent-leash:scaffold` does (propose from README, code comments and `git log` subjects,
 **confirm with the user**, add the line) before writing anything.
 
 Every note, the index, the "back to the index" line and the `AGENTS.md` sections go in
@@ -217,7 +217,7 @@ each with its own vocabulary and rules, usually its own directories or tables): 
 - Every domain note gets a **domain rule** of the same name (`rules/<note>.md`)
   whose globs cover the whole domain and whose first line orders reading the note —
   that is what makes the agent read it when it navigates into the domain, not only
-  when it edits. Hand them to `/agent-kit:rules`; they are mandatory, not candidates.
+  when it edits. Hand them to `/agent-leash:rules`; they are mandatory, not candidates.
 - A module inside a domain stays a section of the domain note until it outgrows one
   read; then it gets its own `module-*.md` with the narrower glob, and the domain
   note's `paths:` drop it (notes must not overlap). The domain rule keeps covering it.
@@ -228,14 +228,14 @@ One domain → keep the single `domains.md`, no domain rules.
 
 **Do not write twelve deep notes at once.** The return drops fast, and what you wrote
 about a module nobody touched rots before its first read. Deepen a module when a real
-task touches it — that is what `/agent-kit:memory <area>` is for.
+task touches it — that is what `/agent-leash:memory <area>` is for.
 
 A mature module note has: main entities and tables, the non-obvious business rules with
 their why, external integrations, and the traps already paid for.
 
 When closing the note, ask whether anything is left that the agent must obey **without
 having read the note**. If so, it is a rule candidate for that area — five to ten lines,
-ending with the pointer to the note. Hand it to `/agent-kit:rules <area>`.
+ending with the pointer to the note. Hand it to `/agent-leash:rules <area>`.
 
 ## Phase 6 — Close the index → `MEMORY.md`
 
@@ -302,7 +302,7 @@ Note format:
 
 - **Phases 0–2 in the main flow.** They are cheap and you need that context to judge
   everything else.
-- **Phases 3–5 are fan-out:** launch the `agent-kit:explorer` agent in parallel, one per
+- **Phases 3–5 are fan-out:** launch the `agent-leash:explorer` agent in parallel, one per
   module or area. It is exactly the case subagents are for — reads a lot, concludes
   little.
 - **The explorer reports, you write.** It does not edit memory on purpose: the main flow
@@ -322,7 +322,7 @@ knowledge.
 At the end: notes created/extended, what went into `AGENTS.md`, the open questions still
 unanswered, the **read rules** owed (one per `kind: domain` note, with the domain's globs,
 and one per other note with `paths:`, with those globs), and the
-**rule candidates** (area + one line each) — offer `/agent-kit:rules` for them.
+**rule candidates** (area + one line each) — offer `/agent-leash:rules` for them.
 
 ## Maintenance
 

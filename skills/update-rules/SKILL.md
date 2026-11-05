@@ -10,14 +10,14 @@ repository. Checking is reading — do not ask to read. **Ask before writing**, 
 list of findings and the fix proposed for each; deleting a rule always needs a yes.
 
 No `.agents/rules/` or only `memory.md` in it → the policy and the path-scoped rules
-are `/agent-kit:rules` (first pass). Still run the read-rule bullet of check 1 here —
-it carries no policy — then offer `/agent-kit:rules` and stop.
+are `/agent-leash:rules` (first pass). Still run the read-rule bullet of check 1 here —
+it carries no policy — then offer `/agent-leash:rules` and stop.
 
 ## Language
 
 The language of `.agents/` is declared in the root `AGENTS.md` (the line under
 *Memory Catalog*). Read it from there; if it is missing, settle it the way
-`/agent-kit:scaffold` does (propose from README, comments and `git log`, **confirm with
+`/agent-leash:scaffold` does (propose from README, comments and `git log`, **confirm with
 the user**, add the line) before anything else. Every fix you write goes in it.
 
 ## Checks
@@ -36,7 +36,7 @@ Run all of them, then report once.
    - `rules/memory.md` exists: compare it with the template. The template gaining an
      instruction the project's copy lacks → propose adding it, translated; the project's
      own additions stay.
-   - `rules/commit.md` missing → it is policy: offer `/agent-kit:rules`, which asks for it.
+   - `rules/commit.md` missing → it is policy: offer `/agent-leash:rules`, which asks for it.
      Present → check it against the last few hundred `git log --format=%s` subjects; a
      rule the history contradicts is a question for the user, not a silent fix. Missing
      one of the bullets the `rules` skill always includes → propose adding it,
@@ -76,7 +76,7 @@ Run all of them, then report once.
    area's note and leave the pointer.
 
 5. **Pointers.** Every rule ends pointing at a note; the note exists. A broken pointer →
-   fix it, or the note is missing: offer `/agent-kit:memory <area>`.
+   fix it, or the note is missing: offer `/agent-leash:memory <area>`.
 
 6. **Language.** A rule not in the declared language → list it and offer to translate
    (it is a rewrite).
@@ -89,7 +89,7 @@ Run all of them, then report once.
    git log --format=%h -1 -- .agents/memory/<note>.md
    ```
 
-   List them and offer `/agent-kit:rules <area>`; do not write them in this pass.
+   List them and offer `/agent-leash:rules <area>`; do not write them in this pass.
 
 `rules/memory.md` is exempt from checks 3 and 4 while `.agents/memory/` exists — it is
 short on purpose and nothing else may replace it.
@@ -101,4 +101,4 @@ between keeping and deleting.
 ## Report
 
 Created/changed/deleted rules with their globs and match counts, what you left and why,
-and the `/agent-kit:rules <area>` follow-ups. Stage the rules you changed by name.
+and the `/agent-leash:rules <area>` follow-ups. Stage the rules you changed by name.

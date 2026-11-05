@@ -10,13 +10,13 @@ the code. Checking is reading — do not ask to read. **Ask before writing**, wi
 of findings and the fix proposed for each.
 
 No `.agents/memory/MEMORY.md` → there is nothing to review: that is
-`/agent-kit:memory` (bootstrap). Say so and stop.
+`/agent-leash:memory` (bootstrap). Say so and stop.
 
 ## Language
 
 The language of `.agents/` is declared in the root `AGENTS.md` (the line under
 *Memory Catalog*). Read it from there; if it is missing, settle it the way
-`/agent-kit:scaffold` does (propose from README, comments and `git log`, **confirm with
+`/agent-leash:scaffold` does (propose from README, comments and `git log`, **confirm with
 the user**, add the line) before anything else. Every fix you write goes in it.
 
 ## Checks
@@ -56,7 +56,7 @@ Run all of them, then report once. Each finding: note, what is wrong, proposed f
    `SKIP_MEMORY_CHECK=1` commits land here too — that is the point: someone judged the
    note still held, and this pass checks. For each note with commits, read the note
    against those diffs (`git diff "$since"..HEAD -- <globs>`). Many notes → fan out to
-   `agent-kit:explorer`, one per note, asking for "what in this note the diffs made
+   `agent-leash:explorer`, one per note, asking for "what in this note the diffs made
    wrong or incomplete"; you write the fixes.
 
 5. **Area notes without `paths:`.** A note that describes a directory or module
@@ -74,7 +74,7 @@ Run all of them, then report once. Each finding: note, what is wrong, proposed f
 
 8. **Gaps.** Foundation notes the index promises but that do not exist, or an area with
    heavy recent activity (`git log --since=6.months --name-only`) and no note → do not
-   write them here: list them and offer `/agent-kit:memory <area>`.
+   write them here: list them and offer `/agent-leash:memory <area>`.
 
 ## Fixing
 
@@ -85,5 +85,5 @@ Stage the notes you changed by name, together with nothing else.
 ## Report
 
 Findings per check (cut the empty ones), what you fixed, what you left and why, and the
-`/agent-kit:memory <area>` and `/agent-kit:rules <area>` follow-ups — a fixed note that
+`/agent-leash:memory <area>` and `/agent-leash:rules <area>` follow-ups — a fixed note that
 now holds a new "never"/"always" is a rule candidate.

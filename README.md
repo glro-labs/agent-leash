@@ -1,29 +1,44 @@
-# Agent KIT
+# Agent Leash
 
 Claude Code plugin that sets up an agent context on a new project: guards, the
 `.agents/` structure, and the skills that map the repository into memory and rules.
 
 The repository root is the plugin and also a one-entry marketplace, both called
-`agent-kit`, so the plugin installs as `agent-kit@agent-kit`.
+`agent-leash`, so the plugin installs as `agent-leash@agent-leash`.
 
 ## Install
 
 Register the marketplace — **once per machine**, not per project:
 
 ```bash
-claude plugin marketplace add https://github.com/rockberpro/agent-kit.git
+claude plugin marketplace add https://github.com/glro-labs/agent-leash.git
 ```
 
-Install `agent-kit`. The default scope is `user`, which is what you want here: the
+Install `agent-leash`. The default scope is `user`, which is what you want here: the
 master-guard then applies to every repository of yours.
 
 ```bash
-claude plugin install agent-kit@agent-kit
+claude plugin install agent-leash@agent-leash
 ```
 
 Inside Claude Code the same commands exist as `/plugin marketplace add`,
 `/plugin install` and `/plugin` (interactive UI). After installing mid-session, run
 `/reload-plugins`.
+
+## Migrating from agent-kit
+
+The project was `agent-kit` and moved to the `glro-labs` org as `agent-leash`. The plugin
+and marketplace names changed with it, so commands are now `/agent-leash:*`. On each machine:
+
+```bash
+claude plugin uninstall agent-kit@agent-kit
+claude plugin marketplace remove agent-kit
+claude plugin marketplace add https://github.com/glro-labs/agent-leash.git
+claude plugin install agent-leash@agent-leash
+```
+
+Then, in each project that already has the context, run `/agent-leash:update-hooks` to
+drop the old `agent-kit` entries from `.agents/settings.json`.
 
 ## Use it on a new project
 
@@ -35,7 +50,7 @@ claude
 and in the session:
 
 ```
-/agent-kit:scaffold
+/agent-leash:scaffold
 ```
 
 The skill sets up `.agents/` (`memory/`, `rules/`, `settings.json`, `.claude` symlink),
@@ -47,8 +62,8 @@ The structure starts empty on purpose. Two skills fill it, each one asking befor
 writes:
 
 ```
-/agent-kit:memory [area]   # maps the repo into AGENTS.md + .agents/memory/
-/agent-kit:rules  [area]   # writes .agents/rules/: the commit policy, then per-area rules
+/agent-leash:memory [area]   # maps the repo into AGENTS.md + .agents/memory/
+/agent-leash:rules  [area]   # writes .agents/rules/: the commit policy, then per-area rules
 ```
 
 Without an argument they do the full pass (for `memory`, the bootstrap phases, stopping
@@ -57,7 +72,7 @@ only that one, which is how the catalog grows afterwards: by the tasks that touc
 
 The `settings.json` it writes carries only the project's policy — no blind `git add` —
 and never names this plugin. Whether commits and PRs keep agents (Claude, Codex, ...) as
-co-authors is asked by `/agent-kit:rules` with the rest of the commit policy, in your
+co-authors is asked by `/agent-leash:rules` with the rest of the commit policy, in your
 language, and written both to `rules/commit.md` and to `attribution` in `settings.json`. The guards act for whoever
 has the plugin installed, so each teammate runs the *Install* steps once on their
 machine; a clone without it still gets the deny list, just not the guards.
@@ -65,17 +80,17 @@ machine; a clone without it still gets the deny list, just not the guards.
 **Windows:** `.claude` and `CLAUDE.md` are symlinks. Turn on Developer Mode (Settings →
 System → For developers) and clone with `git clone -c core.symlinks=true ...`; otherwise
 git checks them out as small text files and the context is silently off. Already cloned?
-`/agent-kit:scaffold` detects it and repairs the links.
+`/agent-leash:scaffold` detects it and repairs the links.
 
 ## Update a project that already has the context
 
 Nothing is re-created and nothing is replaced without a diff and a yes:
 
 ```
-/agent-kit:update-all      # the four passes below, in order, one report
-/agent-kit:update-hooks    # settings.json against the template, drops old guard copies
-/agent-kit:update-memory   # index, globs, notes whose area changed since they were touched
-/agent-kit:update-rules    # mandatory rules, dead globs, duplicates, new candidates
+/agent-leash:update-all      # the four passes below, in order, one report
+/agent-leash:update-hooks    # settings.json against the template, drops old guard copies
+/agent-leash:update-memory   # index, globs, notes whose area changed since they were touched
+/agent-leash:update-rules    # mandatory rules, dead globs, duplicates, new candidates
 ```
 
 `update-all` runs the `scaffold` first (idempotent: it only adds the missing structure),
@@ -85,8 +100,8 @@ older versions put in `.agents/hooks/` are removed on a yes: the plugin runs the
 ## Uninstall
 
 ```bash
-claude plugin uninstall agent-kit@agent-kit
-claude plugin marketplace remove agent-kit
+claude plugin uninstall agent-leash@agent-leash
+claude plugin marketplace remove agent-leash
 ```
 
 ## What is inside
@@ -115,32 +130,32 @@ All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash
   wrong, stage it with the code. Whichever of `scaffold`, `memory` or `rules` meets a
   `.agents/memory/` without `.agents/rules/memory.md` copies it there, translated into
   the project's language; none overwrites an existing one.
-- **skill `/agent-kit:scaffold`** — sets up `.agents/` (memory, rules, settings,
+- **skill `/agent-leash:scaffold`** — sets up `.agents/` (memory, rules, settings,
   `.claude` symlink) in a repository that does not have it yet.
-- **skill `/agent-kit:memory [area]`** — the mapping procedure: cheap reconnaissance,
+- **skill `/agent-leash:memory [area]`** — the mapping procedure: cheap reconnaissance,
   non-negotiables into `AGENTS.md`, architecture, module map, domains, then the
   `MEMORY.md` index; with an area, deepens just that one. A system with several
   domains (business or technical) gets one domain note each (`kind: domain`) plus a
   `domains.md` map. Carries the criteria for what makes a note worth reading and where
   each fact goes (`AGENTS.md` / `rules/` / `memory/`).
-- **skill `/agent-kit:rules [area]`** — path-scoped rules in `.agents/rules/`: asks the
+- **skill `/agent-leash:rules [area]`** — path-scoped rules in `.agents/rules/`: asks the
   commit policy and writes the always-on `commit.md`, then one short imperative rule per
   area, globs checked against `git ls-files`. Every note that owns an area gets a
   mandatory read rule that orders reading it — a `kind: domain` note over the whole
   domain, any other note with `paths:` over those globs — so the agent reads it as soon
   as it opens a file there, not only when the commit guard catches it.
-- **agent `agent-kit:explorer`** — read-only investigator: maps a new demand or the
+- **agent `agent-leash:explorer`** — read-only investigator: maps a new demand or the
   blast radius of a change, returns a report, never edits. The `memory` and
   `update-memory` skills fan out to it.
-- **agent `agent-kit:planner`** — read-only: turns an explorer report into ordered
+- **agent `agent-leash:planner`** — read-only: turns an explorer report into ordered
   steps, each with its files, the rule or note that constrains it, and its check.
-- **agent `agent-kit:implementer`** — does one planned step: edits code and the stale
+- **agent `agent-leash:implementer`** — does one planned step: edits code and the stale
   note, runs the step's check, reports. Never stages or commits.
-- **agent `agent-kit:test-runner`** — finds and runs the project's tests, returns only
+- **agent `agent-leash:test-runner`** — finds and runs the project's tests, returns only
   the failures and their cause. Never edits.
-- **agent `agent-kit:reviewer`** — read-only: checks a diff against the project's own
+- **agent `agent-leash:reviewer`** — read-only: checks a diff against the project's own
   memory, rules and commit/PR policy, the part a generic review does not know.
-- **skills `/agent-kit:update-{all,hooks,memory,rules}`** — review an existing context;
+- **skills `/agent-leash:update-{all,hooks,memory,rules}`** — review an existing context;
   see *Update a project* above.
 
 ## Publish
@@ -152,7 +167,7 @@ no way to ask for a password — either the repository is public/internal, or ev
 person needs a credential helper already configured
 (`git config --global credential.helper store`, with an access token). If that
 becomes friction, switch the URL to SSH
-(`git@github.com:rockberpro/agent-kit.git`).
+(`git@github.com:glro-labs/agent-leash.git`).
 
 ## Versioning
 
@@ -167,8 +182,8 @@ claude plugin validate . --strict && claude plugin validate .claude-plugin/plugi
 for t in hooks/*.test.sh; do bash "$t" || break; done
 # when a skill changed: full memory + rules passes on the fixtures in evals/ (costs real runs)
 claude plugin eval . --scaffold --allow-tools Bash Write Edit --runs 3
-git commit -am "feat(agent-kit): <what changed>"
-claude plugin tag agent-kit          # creates agent-kit--v0.11.0, checking that plugin.json
+git commit -am "feat(agent-leash): <what changed>"
+claude plugin tag agent-leash          # creates agent-leash--v0.13.0, checking that plugin.json
                                 # and the marketplace.json entry agree
 git push --follow-tags
 ```
@@ -183,7 +198,7 @@ On each machine: `/plugin marketplace update` and restart the session.
 **Pinning** (a machine that must not break) — register the marketplace at a tag:
 
 ```bash
-claude plugin marketplace add https://github.com/rockberpro/agent-kit.git#agent-kit--v0.11.0
+claude plugin marketplace add https://github.com/glro-labs/agent-leash.git#agent-leash--v0.13.0
 ```
 
 Without a ref it follows the default branch and picks up everything that lands there.
@@ -195,18 +210,18 @@ decides when to take updates. Projects never name the marketplace, so nothing in
 changes — only where each machine gets the plugin from.
 
 ```bash
-git clone https://github.com/rockberpro/agent-kit.git && cd agent-kit
+git clone https://github.com/glro-labs/agent-leash.git && cd agent-leash
 git remote rename origin upstream
 git remote add origin <company-git-url>
 git push -u origin main --tags
 ```
 
-Keep the marketplace and plugin names (`agent-kit`, `agent-kit@agent-kit`): the install
+Keep the marketplace and plugin names (`agent-leash`, `agent-leash@agent-leash`): the install
 commands refer to them.
 
 - **Machines:** `claude plugin marketplace add <company-git-url>` instead of the GitHub URL
-  (already registered → `claude plugin marketplace remove agent-kit` first).
-- **Taking an update:** `git fetch upstream --tags && git merge agent-kit--v<version>`,
+  (already registered → `claude plugin marketplace remove agent-leash` first).
+- **Taking an update:** `git fetch upstream --tags && git merge agent-leash--v<version>`,
   run the release gate above, then `git push origin main --tags`. The upstream tags
   come along, so `ref` pins keep working.
 
