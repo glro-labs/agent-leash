@@ -1,6 +1,7 @@
 ---
 name: update
-description: Reviews a whole existing harness in one pass - .agents/ structure, hooks and settings, memory catalog, rules - creating what is missing and updating what drifted, asking before any replacement or rewrite. Use when the user asks to update, upgrade, review or repair the agent harness (or ".agents") of a project that already has one, typically after upgrading agent-leash.
+description: Reviews a whole existing harness in one pass - .agents/ structure, settings and the repo's guard, memory catalog, rules - creating what is missing and updating what drifted, asking before any replacement or rewrite. Use when the user asks to update, upgrade, review or repair the agent harness (or ".agents") of a project that already has one, typically after upgrading agent-leash. Pass --project <dir> to maintain a sub-project's harness.
+argument-hint: "[--project <dir>]"
 ---
 
 # update
@@ -9,7 +10,17 @@ The four update passes in dependency order, one consolidated report at the end. 
 keeps its own rule about what needs a yes; do not batch the questions of a later pass
 into an earlier one — its findings depend on what the earlier pass fixed.
 
+```bash
+cd "$(git rev-parse --show-toplevel)" || exit 1   # not a git repo → stop and say so
+```
+
 No `.agents/` at all → this is not an update: run `/agent-leash:install` instead and stop.
+
+`--project <dir>` in `$ARGUMENTS` → a sub-project: resolve it with
+`bash "${CLAUDE_PLUGIN_ROOT}/scripts/target.sh" <dir>` (a message → stop and say it), `cd`
+to the printed `top`, and run each pass with `--project <tag>`. Memory and rules are the
+sub-project's, globs relative to its folder; its guard is its own
+(`scripts/guards.sh --project <tag> --check`).
 
 ## Order
 
@@ -17,17 +28,30 @@ No `.agents/` at all → this is not an update: run `/agent-leash:install` inste
    creates what is missing (symlinks, `AGENTS.md` sections, the language line, the
    anti-drift rule) and touches nothing that exists. Settle the language here — every
    later pass reads it from `AGENTS.md`.
-2. **Hooks — `/agent-leash:update-hooks`.** `settings.json` against the template; guard copies
-   left by older versions are removed only after a yes.
+2. **Settings and guard — `/agent-leash:update-hooks`.** `settings.json` against the
+   template; the repo's `.agents/hooks/guard.sh` against the plugin's, its registration,
+   and per-guard copies left by older versions, replaced only after a yes.
 3. **Memory — `/agent-leash:update-memory`.** Before rules: rules point at notes, and the
-   rule candidates come from what the notes say now.
+   rule candidates come from what the notes say now. Index integrity and the anti-drift
+   rule are written without asking.
 4. **Rules — `/agent-leash:update-rules`.** Last, over the notes as they are after step 3.
+   The read rule of every note that owns an area is written without asking.
 
 A pass with nothing to do reports "nothing to do" in one line and the next one starts.
 
 ## Report
 
-One section per pass: created, updated, left on purpose (and why), what still needs the
-user (old marketplace entries, linked hooks, rewrites declined). Then the follow-ups the passes
-listed — `/agent-leash:memory <area>`, `/agent-leash:rules <area>` — as one list. Everything
-changed is staged by name; committing follows the project's `rules/commit.md`.
+One section per pass: created, updated, written without asking (and why it was
+mandatory), left on purpose (and why), what still needs the user (old marketplace
+entries, a stale guard copy, rewrites declined). Then the follow-ups the passes listed —
+`/agent-leash:memory <area>`, `/agent-leash:rules <area>` — as one list.
+
+**Sub-projects:** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/subprojects.sh"` (writes nothing).
+Each `harness` line → `/agent-leash:update --project <tag>` in the follow-ups; each
+`candidate` (a `CLAUDE.md` or `.claude/` of its own, no `.agents/`) →
+`/agent-leash:install --project <tag>`; a sub-project missing from the root `AGENTS.md`
+§ Sub-projects → add its line (`/agent-leash:install` step 4). This review never maintains
+a sub-project itself.
+
+Everything changed is staged by name; committing follows the project's `rules/commit.md`.
+No commit unless the user asks.

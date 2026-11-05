@@ -18,29 +18,54 @@ The repository root is the plugin and also a one-entry marketplace, both called
 ## How it works
 
 `/agent-leash:install` sets up `.agents/` (`memory/`, `rules/`, `settings.json`,
-`.claude` symlink), the root `AGENTS.md` with `CLAUDE.md` pointing at it, and writes the
-anti-drift rule `.agents/rules/memory.md`. It is idempotent: run again on an already
+`.claude` symlink), the root `AGENTS.md` with `CLAUDE.md` pointing at it, the anti-drift
+rule `.agents/rules/memory.md`, and the repo's own guards (below). The mechanical steps
+are scripts in `scripts/` (`scaffold.sh`, `guards.sh`, `link.sh`, `merge-json.pl`), so
+they run the same way every time; the skill keeps the questions and the judgment. It is idempotent: run again on an already
 initialized project and it only creates what is missing, never overwriting content.
 
 The structure starts empty on purpose. Two skills fill it, each one asking before it
 writes:
 
 ```
-/agent-leash:memory [area]   # maps the repo into AGENTS.md + .agents/memory/
-/agent-leash:rules  [area]   # writes .agents/rules/: the commit policy, then per-area rules
+/agent-leash:memory [area | --note <path>]   # maps the repo into AGENTS.md + .agents/memory/
+/agent-leash:rules  [area | --note <path>]   # writes .agents/rules/: the commit policy, then per-area rules
 ```
 
 Without an argument they do the full pass (for `memory`, the bootstrap phases, stopping
 at a minimum usable catalog); with an area — a module, a directory, a subject — they map
 only that one, which is how the catalog grows afterwards: by the tasks that touch it.
+`--note <path>` deepens one existing note instead of mapping an area. A doc the repo
+already keeps current (a per-class notes file, a plan with status) is adopted as a
+**pointer note** (`kind: pointer`, `doc:` naming the file) rather than copied:
+`memory-drift-guard` then accepts the doc or the note in the commit, and
+`scripts/coupling.sh <doc> <glob>…` shows how often the area's commits already touch the
+doc, so you know how often the guard would block. A repo with fewer than three modules or
+under about 20k lines is mapped in the main flow, without explorer fan-out.
 
 The `settings.json` it writes carries only the project's policy — no blind `git add` —
 and never names this plugin. Whether commits and PRs keep agents (Claude, Codex, ...) as
 co-authors is asked by `/agent-leash:rules` with the rest of the commit policy, in your
 language, and written both to `rules/commit.md` and to `attribution` in `settings.json`.
-The guards act for whoever has the plugin installed, so each teammate runs the install
-steps once on their machine; a clone without it still gets the deny list, just not the
-guards.
+The guards belong to the repo, not to the plugin: the plugin registers no hooks.
+`install` asks which checks the repo carries (all three by default), copies `hooks/guard.sh`
+to `.agents/hooks/guard.sh` and registers it in `.agents/settings.json`, both versioned.
+A check the team turns off is a flag on that command line (`--no-master`, `--no-secret`,
+`--no-memory-drift`). They then run for everyone on the repo, plugin or not, and a change
+to them is a reviewed diff. A registration already in `settings.json` is the team's and is
+never rewritten.
+
+### Sub-projects
+
+A monorepo's `frontend/` and `backend/` can each carry a harness: Claude Code reads
+`settings.json` only from the folder a session starts in, never from a parent. Every
+setup skill takes `--project <dir>` (`/agent-leash:install --project frontend`,
+`/agent-leash:memory --project frontend src/pages`). Git tells the layout — **same-repo**
+(a folder of the root's repo; `rules/commit.md` links to the root's) or **own-repo** (a
+nested clone or submodule; its own policy) — never a question. Notes' `paths:` and rules'
+globs are relative to the sub-project's folder; `memory-drift-guard` reads every
+`.agents/memory/` in the repo and follows a leading `cd <dir> &&`. The root `AGENTS.md`
+lists them under *Sub-projects*, and `scripts/subprojects.sh` finds them.
 
 ## Windows
 
@@ -55,27 +80,40 @@ Nothing is re-created and nothing is replaced without a diff and a yes:
 
 ```
 /agent-leash:update      # the four passes below, in order, one report
-/agent-leash:update-hooks    # settings.json against the template, drops old guard copies
+/agent-leash:update-hooks    # settings.json against the template, the repo's guard copy and registration
 /agent-leash:update-memory   # index, globs, notes whose area changed since they were touched
-/agent-leash:update-rules    # mandatory rules, dead globs, duplicates, new candidates
+/agent-leash:update-rules    # read rules, dead globs, duplicates, new candidates
+/agent-leash:update-memory --index   # only repair MEMORY.md, e.g. after a merge conflict
 ```
 
 `update` runs the `install` first (idempotent: it only adds the missing structure),
-then hooks → memory → rules — rules last, because they point at notes. Guard copies that
-older versions put in `.agents/hooks/` are removed on a yes: the plugin runs the guards now.
+then hooks → memory → rules — rules last, because they point at notes. What is mandatory
+and carries no policy is written without asking and listed in the report: index integrity
+(conflict markers, broken links, orphan notes, back links), the anti-drift rule, and a
+read rule for every note that owns an area. Everything else is proposed and written on a
+yes. `update-memory` also runs the read-rule check at the end, so rules never lag the
+catalog. `--project <dir>` maintains a sub-project.
+
+**Upgrading from 0.13 or earlier:** the plugin no longer runs the guards itself. Run
+`/agent-leash:update` once per project: `update-hooks` asks the guard question, copies
+`guard.sh` into `.agents/hooks/` and registers it, and offers to replace the one-guard-per-file
+copies of older versions. Until then the project runs no guards.
 
 ## What is inside
 
-All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash call.
+All three guards are checks in one script, `hooks/guard.sh`, run before every Bash call
+through the copy each repo carries (`scripts/guards.sh`). The plugin's `hooks/hooks.json`
+registers nothing.
 
 - **guard `master-guard`** — on `master`/`main`, blocks anything that writes a commit
   there (`commit`, `cherry-pick`, `revert`, `am`, `rebase`), plus `git merge`,
-  `git reset --hard` and any `push` that targets the protected branch. `--abort` /
+  `git reset --hard` and any `push` that targets the protected branch (a branch named
+  `fix/main` is not one). Its message suggests `git switch -c <type>/<description>`. `--abort` /
   `--continue` on a stuck sequencer still go through. Fails open: any internal error
   exits 0, never wedging the session. Test:
   `bash hooks/master-guard.test.sh`.
 - **guard `secret-guard`** — blocks a `git commit` whose content looks like a secret:
-  a private-key header, a well-known token format (AWS/GitHub/Slack/GCP), or a `.env`
+  a private-key header, a well-known token format (AWS, GitHub, Slack, Google, GitLab, Anthropic, OpenAI, Stripe live keys), or a `.env`
   or keystore (`.p12`/`.pfx`/`.jks`) being added. It only checks added lines, so a
   secret already in history does not block new commits — keystores are matched by name
   instead, since a binary diff has no lines to scan. Also fails open. Test:
@@ -83,7 +121,7 @@ All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash
 - **guard `memory-drift-guard`** — blocks a `git commit` that touches code covered by a
   memory note (declared in the note's `paths:` frontmatter) when the note is not in the
   same commit, so it is reviewed while the diff is fresh. `SKIP_MEMORY_CHECK=1` in front
-  of the command when the note still holds. A note without `paths:` is never demanded.
+  of the command when the note still holds. A note without `paths:` is never demanded; for a pointer note, the note or its `doc:` satisfies it.
   Also fails open. Test: `bash hooks/memory-drift-guard.test.sh`.
 - **rule template `templates/rules/memory.md`** — the always-on half of the same
   contract: read the area's note before editing, fix it in the same task when it goes
@@ -91,7 +129,10 @@ All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash
   `.agents/memory/` without `.agents/rules/memory.md` copies it there, translated into
   the project's language; none overwrites an existing one.
 - **skill `/agent-leash:install`** — sets up `.agents/` (memory, rules, settings,
-  `.claude` symlink) in a repository that does not have it yet.
+  `.claude` symlink) and the repo's guards in a repository that does not have them yet.
+- **`scripts/`** — the deterministic steps: `scaffold.sh`, `guards.sh`, `link.sh`,
+  `merge-json.pl` (adds missing settings entries, keeps key order), `target.sh`,
+  `subprojects.sh`, `coupling.sh`. Test: `bash scripts/scripts.test.sh`.
 - **skill `/agent-leash:memory [area]`** — the mapping procedure: cheap reconnaissance,
   non-negotiables into `AGENTS.md`, architecture, module map, domains, then the
   `MEMORY.md` index; with an area, deepens just that one. A system with several

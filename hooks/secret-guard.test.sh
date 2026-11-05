@@ -24,7 +24,7 @@ newrepo() {
 
 fails=0
 t(){ # t <cwd> <command> <expected exit>
-  local out; out="$(cd "$1" && printf '{"tool_input":{"command":%s}}' "$(perl -MJSON::PP -e 'print JSON::PP->new->allow_nonref->encode($ARGV[0])' "$2")" | bash "$H" 2>&1)"
+  local out; out="$(cd "$1" && printf '{"tool_input":{"command":%s}}' "$(perl -MJSON::PP -e 'print JSON::PP->new->allow_nonref->encode($ARGV[0])' "$2")" | bash "$H" ${GUARD_ARGS:-} 2>&1)"
   local r=$?; local s=ok
   [ "$r" = "$3" ] || { s=FAIL; fails=$((fails+1)); }
   printf '%-4s got=%s want=%s  <- %s\n' "$s" "$r" "$3" "$2"
@@ -49,6 +49,20 @@ r="$(newrepo)"; printf 'token=%s\n' "$GHP" > "$r/c.txt"; git -C "$r" add c.txt
 t "$r" 'git commit -m x' 2
 r="$(newrepo)"; printf -- '-----BEGIN RSA PRIVATE KEY-----\nabc\n' > "$r/id_rsa"; git -C "$r" add id_rsa
 t "$r" 'git commit -m x' 2
+
+echo "== prefixed service tokens: commit blocked =="
+# Built at runtime: a literal token in this file would trip push protection on the remote.
+pad(){ printf '%*s' "$1" '' | tr ' ' 'a'; }
+for tok in "glpat-$(pad 20)" "gldt-$(pad 20)" "glrt-$(pad 20)" "glptt-$(pad 40)" \
+           "sk-ant-api03-$(pad 95)" "sk-proj-$(pad 48)" "sk-svcacct-$(pad 48)" \
+           "sk-$(pad 20)T3Blbk""FJ$(pad 20)" "sk_live_$(pad 24)" "rk_live_$(pad 24)"; do
+  r="$(newrepo)"; printf 'token=%s\n' "$tok" > "$r/c.txt"; git -C "$r" add c.txt
+  t "$r" "git commit -m ${tok:0:10}" 2
+done
+
+echo "== test keys and too-short lookalikes pass =="
+r="$(newrepo)"; printf 'stripe=sk_test_%s\nnote=sk-proj-short glpat-short\n' "$(pad 24)" > "$r/c.txt"; git -C "$r" add c.txt
+t "$r" 'git commit -m x' 0
 
 echo "== .env staged is blocked; .env.example is not =="
 r="$(newrepo)"; printf 'X=1\n' > "$r/.env"; git -C "$r" add .env
@@ -83,6 +97,11 @@ r="$(newrepo)"; printf 'ok\n' > "$r/t.txt"
 git -C "$r" add t.txt; git -C "$r" -c user.email=t@t -c user.name=t commit -q -m seed
 printf 'aws=%s\n' "$AKIA" > "$r/t.txt"    # modified, NOT staged
 t "$r" 'git commit -am x' 2
+
+echo "== the project turned secret-guard off: a flag on the hook's command line =="
+r="$(newrepo)"; printf 'key=%s\n' "$AKIA" > "$r/c.txt"; git -C "$r" add c.txt
+GUARD_ARGS=--no-secret t "$r" 'git commit -m x' 0
+GUARD_ARGS=--no-master t "$r" 'git commit -m x' 2
 
 echo "failures=$fails"
 [ "$fails" -eq 0 ]
