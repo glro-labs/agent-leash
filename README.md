@@ -20,7 +20,7 @@ Inside Claude Code the same commands exist as `/plugin marketplace add` and
 In a project, start `claude` and run:
 
 ```
-/agent-leash:scaffold   # creates .agents/ and AGENTS.md (safe to re-run)
+/agent-leash:install   # creates .agents/ and AGENTS.md (safe to re-run)
 /agent-leash:memory     # maps the repo into notes the agent reads
 /agent-leash:rules      # asks your commit policy, then writes per-area rules
 ```
@@ -31,14 +31,14 @@ before it writes.
 Later, to keep an existing project in sync:
 
 ```
-/agent-leash:update-all
+/agent-leash:update
 ```
 
 ## What you get
 
 - **Guards** on every Bash call: no commits on `main`/`master`, no secrets in commits,
   no code changes without its memory note.
-- **Skills:** `scaffold`, `memory`, `rules`, `update-{all,hooks,memory,rules}`.
+- **Skills:** `install`, `memory`, `rules`, `update`, `update-{hooks,memory,rules}`.
 - **Agents:** `explorer`, `planner`, `implementer`, `test-runner`, `reviewer`.
 
 ## Migrating from agent-kit

@@ -1,6 +1,6 @@
 ---
 name: update-memory
-description: Reviews an existing .agents/memory/ catalog and fixes what is missing or has drifted - the language line, the anti-drift rule, index links and orphans, dead or overlapping paths globs, notes whose code changed since they were last touched, notes in the wrong language. Use when the user asks to update, review, audit or refresh the memory of a project that already has it, after a long stretch of commits, or as part of update-all.
+description: Reviews an existing .agents/memory/ catalog and fixes what is missing or has drifted - the language line, the anti-drift rule, index links and orphans, dead or overlapping paths globs, notes whose code changed since they were last touched, notes in the wrong language. Use when the user asks to update, review, audit or refresh the memory of a project that already has it, after a long stretch of commits, or as part of update.
 ---
 
 # update-memory
@@ -16,7 +16,7 @@ No `.agents/memory/MEMORY.md` → there is nothing to review: that is
 
 The language of `.agents/` is declared in the root `AGENTS.md` (the line under
 *Memory Catalog*). Read it from there; if it is missing, settle it the way
-`/agent-leash:scaffold` does (propose from README, comments and `git log`, **confirm with
+`/agent-leash:install` does (propose from README, comments and `git log`, **confirm with
 the user**, add the line) before anything else. Every fix you write goes in it.
 
 ## Checks

@@ -1,19 +1,19 @@
 ---
-name: update-all
+name: update
 description: Reviews a whole existing harness in one pass - .agents/ structure, hooks and settings, memory catalog, rules - creating what is missing and updating what drifted, asking before any replacement or rewrite. Use when the user asks to update, upgrade, review or repair the agent harness (or ".agents") of a project that already has one, typically after upgrading agent-leash.
 ---
 
-# update-all
+# update
 
 The four update passes in dependency order, one consolidated report at the end. Each pass
 keeps its own rule about what needs a yes; do not batch the questions of a later pass
 into an earlier one — its findings depend on what the earlier pass fixed.
 
-No `.agents/` at all → this is not an update: run `/agent-leash:scaffold` instead and stop.
+No `.agents/` at all → this is not an update: run `/agent-leash:install` instead and stop.
 
 ## Order
 
-1. **Structure — `/agent-leash:scaffold`.** It is idempotent: on an existing harness it only
+1. **Structure — `/agent-leash:install`.** It is idempotent: on an existing harness it only
    creates what is missing (symlinks, `AGENTS.md` sections, the language line, the
    anti-drift rule) and touches nothing that exists. Settle the language here — every
    later pass reads it from `AGENTS.md`.

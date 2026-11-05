@@ -17,7 +17,7 @@ The repository root is the plugin and also a one-entry marketplace, both called
 
 ## How it works
 
-`/agent-leash:scaffold` sets up `.agents/` (`memory/`, `rules/`, `settings.json`,
+`/agent-leash:install` sets up `.agents/` (`memory/`, `rules/`, `settings.json`,
 `.claude` symlink), the root `AGENTS.md` with `CLAUDE.md` pointing at it, and writes the
 anti-drift rule `.agents/rules/memory.md`. It is idempotent: run again on an already
 initialized project and it only creates what is missing, never overwriting content.
@@ -47,20 +47,20 @@ guards.
 `.claude` and `CLAUDE.md` are symlinks. Turn on Developer Mode (Settings → System → For
 developers) and clone with `git clone -c core.symlinks=true ...`; otherwise git checks
 them out as small text files and the context is silently off. Already cloned?
-`/agent-leash:scaffold` detects it and repairs the links.
+`/agent-leash:install` detects it and repairs the links.
 
 ## Updating a project
 
 Nothing is re-created and nothing is replaced without a diff and a yes:
 
 ```
-/agent-leash:update-all      # the four passes below, in order, one report
+/agent-leash:update      # the four passes below, in order, one report
 /agent-leash:update-hooks    # settings.json against the template, drops old guard copies
 /agent-leash:update-memory   # index, globs, notes whose area changed since they were touched
 /agent-leash:update-rules    # mandatory rules, dead globs, duplicates, new candidates
 ```
 
-`update-all` runs the `scaffold` first (idempotent: it only adds the missing structure),
+`update` runs the `install` first (idempotent: it only adds the missing structure),
 then hooks → memory → rules — rules last, because they point at notes. Guard copies that
 older versions put in `.agents/hooks/` are removed on a yes: the plugin runs the guards now.
 
@@ -87,10 +87,10 @@ All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash
   Also fails open. Test: `bash hooks/memory-drift-guard.test.sh`.
 - **rule template `templates/rules/memory.md`** — the always-on half of the same
   contract: read the area's note before editing, fix it in the same task when it goes
-  wrong, stage it with the code. Whichever of `scaffold`, `memory` or `rules` meets a
+  wrong, stage it with the code. Whichever of `install`, `memory` or `rules` meets a
   `.agents/memory/` without `.agents/rules/memory.md` copies it there, translated into
   the project's language; none overwrites an existing one.
-- **skill `/agent-leash:scaffold`** — sets up `.agents/` (memory, rules, settings,
+- **skill `/agent-leash:install`** — sets up `.agents/` (memory, rules, settings,
   `.claude` symlink) in a repository that does not have it yet.
 - **skill `/agent-leash:memory [area]`** — the mapping procedure: cheap reconnaissance,
   non-negotiables into `AGENTS.md`, architecture, module map, domains, then the
@@ -115,7 +115,7 @@ All three guards are checks in one hook, `hooks/guard.sh`, run before every Bash
   the failures and their cause. Never edits.
 - **agent `agent-leash:reviewer`** — read-only: checks a diff against the project's own
   memory, rules and commit/PR policy, the part a generic review does not know.
-- **skills `/agent-leash:update-{all,hooks,memory,rules}`** — review an existing context;
+- **skills `/agent-leash:update` and `update-{hooks,memory,rules}`** — review an existing context;
   see [Updating a project](#updating-a-project).
 
 ## Publishing
@@ -198,7 +198,7 @@ the skills generate inside a target project follows **that project's** language:
 Portuguese codebase gets Portuguese notes, rules and `AGENTS.md` sections, the copied
 `rules/memory.md` template included.
 
-The language is declared once, not re-guessed on every run: the `scaffold` proposes it
+The language is declared once, not re-guessed on every run: the `install` proposes it
 from README, comments and `git log`, the user confirms, and it goes into `AGENTS.md` as
 one line under *Memory Catalog*. `memory` and `rules` read it from there (and settle it
 the same way if it is missing), and since `AGENTS.md` loads in every session, a note

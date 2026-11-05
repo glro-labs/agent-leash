@@ -1,9 +1,9 @@
 ---
-name: scaffold
+name: install
 description: Creates the .agents/ structure (memory, rules, settings, .claude symlink) in a project that does not have it yet, then hands off to the memory and rules skills. Use when the user asks to initialize/configure the agents directory, the memory base or the .agents of a new repository.
 ---
 
-# scaffold
+# install
 
 Sets up a project's `.agents/` skeleton. **Idempotent**: run again on an already
 initialized project and it only creates what is missing, touching nothing that exists.

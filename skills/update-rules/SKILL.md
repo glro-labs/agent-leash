@@ -1,6 +1,6 @@
 ---
 name: update-rules
-description: Reviews an existing .agents/rules/ and fixes what is missing or has drifted - the mandatory memory and commit rules, dead or too-broad globs, duplicates of AGENTS.md or of each other, rules that grew into explanations, broken pointers to notes, rules in the wrong language, and rule candidates that memory notes gained since. Use when the user asks to update, review, audit or prune the rules of a project that already has them, or as part of update-all.
+description: Reviews an existing .agents/rules/ and fixes what is missing or has drifted - the mandatory memory and commit rules, dead or too-broad globs, duplicates of AGENTS.md or of each other, rules that grew into explanations, broken pointers to notes, rules in the wrong language, and rule candidates that memory notes gained since. Use when the user asks to update, review, audit or prune the rules of a project that already has them, or as part of update.
 ---
 
 # update-rules
@@ -17,7 +17,7 @@ it carries no policy — then offer `/agent-leash:rules` and stop.
 
 The language of `.agents/` is declared in the root `AGENTS.md` (the line under
 *Memory Catalog*). Read it from there; if it is missing, settle it the way
-`/agent-leash:scaffold` does (propose from README, comments and `git log`, **confirm with
+`/agent-leash:install` does (propose from README, comments and `git log`, **confirm with
 the user**, add the line) before anything else. Every fix you write goes in it.
 
 ## Checks

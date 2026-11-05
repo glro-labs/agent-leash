@@ -36,7 +36,7 @@ English kebab-case.
 The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
 line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
 do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-leash:scaffold` does (propose from README, code comments and `git log` subjects,
+`/agent-leash:install` does (propose from README, code comments and `git log` subjects,
 **confirm with the user**, add the line) before writing anything.
 
 Every rule's text and heading go in that language, the commit policy included — its

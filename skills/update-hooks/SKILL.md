@@ -1,6 +1,6 @@
 ---
 name: update-hooks
-description: Reviews an existing harness's .agents/settings.json against this plugin - deny list, attribution matching the commit rule, plugin entries left by older versions - and removes guard copies left in .agents/hooks/ by older versions, asking before removing anything. Use when the user asks to update, check or repair the hooks/guards or settings of a project that already has .agents/, after upgrading agent-leash, or as part of update-all.
+description: Reviews an existing harness's .agents/settings.json against this plugin - deny list, attribution matching the commit rule, plugin entries left by older versions - and removes guard copies left in .agents/hooks/ by older versions, asking before removing anything. Use when the user asks to update, check or repair the hooks/guards or settings of a project that already has .agents/, after upgrading agent-leash, or as part of update.
 ---
 
 # update-hooks
@@ -14,7 +14,7 @@ Language: nothing here writes prose, only JSON keys.
 
 ## Steps
 
-1. **No `.agents/` at all** → this is not an update, it is `/agent-leash:scaffold`. Stop.
+1. **No `.agents/` at all** → this is not an update, it is `/agent-leash:install`. Stop.
 
 2. **`settings.json`** against `${CLAUDE_PLUGIN_ROOT}/templates/settings.json`:
    - missing → copy the template.
