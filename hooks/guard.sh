@@ -19,7 +19,7 @@ payload="$(cat)" || exit 0
 # Decode errors are eval-caught (fail open); a nonzero exit means the parser itself is
 # missing, which is a setup problem: exit 1 so Claude Code shows it instead of hiding it.
 cmd="$(printf '%s' "$payload" | perl -MJSON::PP -0777 -ne 'binmode STDOUT, ":utf8"; my $c = eval { decode_json($_)->{tool_input}{command} }; print $c if defined $c && !ref $c' 2>/dev/null)" \
-  || { echo "agent-kit guard: perl with JSON::PP not found, so this guard is NOT running. Install perl (it ships with git)." >&2; exit 1; }
+  || { echo "agent-leash guard: perl with JSON::PP not found, so this guard is NOT running. Install perl (it ships with git)." >&2; exit 1; }
 [ -z "$cmd" ] && exit 0
 
 # Match `git [global options] <verb>` (handles `git -C x commit`, `&&` chains).

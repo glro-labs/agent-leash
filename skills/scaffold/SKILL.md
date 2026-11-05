@@ -79,7 +79,7 @@ CLAUDE.md -> AGENTS.md
 
        Needs Developer Mode on (below); still not a link afterwards → stop and say so.
      - a real `.claude/` directory, or a `CLAUDE.md` with its own content next to an
-       `AGENTS.md` → a copy made by an older `ln -s`, or a harness from before agent-kit.
+       `AGENTS.md` → a copy made by an older `ln -s`, or a harness from before agent-leash.
        Diff it against `.agents/` / `AGENTS.md`, show what only the copy has, and **ask**
        before merging it in and replacing the copy with the link.
 
@@ -162,9 +162,9 @@ CLAUDE.md -> AGENTS.md
 6. **Hand off to the mapping skills.** The structure is empty until they run; both
    read a lot and ask before writing, so offer them instead of starting unasked:
 
-   - `/agent-kit:memory` — no `MEMORY.md` yet: maps the repository into `AGENTS.md`
+   - `/agent-leash:memory` — no `MEMORY.md` yet: maps the repository into `AGENTS.md`
      and the catalog (phases 0–4, then stops).
-   - `/agent-kit:rules` — no `rules/commit.md` yet: asks the commit policy and writes
+   - `/agent-leash:rules` — no `rules/commit.md` yet: asks the commit policy and writes
      it, then the path-scoped rules for the candidates the memory pass found.
 
    If the user already asked for the whole setup in one go, run them in that order.

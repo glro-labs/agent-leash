@@ -15,4 +15,4 @@ No `paths:` on purpose: it applies to any edit, so it loads in every session.
 - A note that describes an area of code declares it in `paths:`; without it the guard
   cannot see the note.
 
-Procedure and note format: the `agent-kit:memory` skill.
+Procedure and note format: the `agent-leash:memory` skill.

@@ -36,7 +36,7 @@ English kebab-case.
 The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
 line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
 do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-kit:scaffold` does (propose from README, code comments and `git log` subjects,
+`/agent-leash:scaffold` does (propose from README, code comments and `git log` subjects,
 **confirm with the user**, add the line) before writing anything.
 
 Every rule's text and heading go in that language, the commit policy included — its
@@ -46,9 +46,9 @@ Every rule's text and heading go in that language, the commit policy included �
 
 - **No argument** — full pass: the always-on rules, the read rules (one per note that
   owns an area, below), then one rule per area that has a candidate. Reviewing rules that already exist — dead globs, duplicates,
-  language — is `/agent-kit:update-rules`.
+  language — is `/agent-leash:update-rules`.
 - **An area** (`$ARGUMENTS`) — only that area's rule. Read its memory note first; if
-  there is none, run `/agent-kit:memory <area>` first or ask the user whether to write
+  there is none, run `/agent-leash:memory <area>` first or ask the user whether to write
   the rule without one.
 
 ## Rule or memory note?

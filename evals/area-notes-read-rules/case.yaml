@@ -10,7 +10,7 @@ context:
   scaffold_script: setup.sh
 execution:
   prompt: |
-    Review this repository's rules with the agent-kit update-rules skill.
+    Review this repository's rules with the agent-leash update-rules skill.
     Everything you would ask approval for is approved in advance.
     Do not write a commit policy and do not commit.
   max_turns: 40
