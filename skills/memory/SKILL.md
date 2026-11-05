@@ -19,7 +19,7 @@ want a smaller cut.
   only, then phase 6 to hook the note into the index. Read `MEMORY.md` first: if a note
   already covers the area, deepen that one instead of creating a sibling.
 
-Run `/agent-leash:scaffold` first if `.agents/` does not exist. Settle the language
+Run `/agent-leash:install` first if `.agents/` does not exist. Settle the language
 (next section) before anything else.
 
 **Before writing the first note**, make sure the anti-drift rule exists — a catalog
@@ -37,7 +37,7 @@ overwrite an existing one.
 The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
 line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
 do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-leash:scaffold` does (propose from README, code comments and `git log` subjects,
+`/agent-leash:install` does (propose from README, code comments and `git log` subjects,
 **confirm with the user**, add the line) before writing anything.
 
 Every note, the index, the "back to the index" line and the `AGENTS.md` sections go in
@@ -130,7 +130,7 @@ architecture on purpose: it is the phase that prevents damage. Survey, and write
   line.
 
 `AGENTS.md` shape (headings in the project's language; keep the memory section the
-scaffold wrote):
+install wrote):
 
 ```markdown
 # <Project> — Agent Guide
