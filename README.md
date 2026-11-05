@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="resources/img/agent-leash--cropped.jpeg" alt="Agent Leash" width="400">
+</p>
+
 # Agent Leash
 
 Claude Code plugin that puts your agent on a leash: guards on git, plus the memory and
