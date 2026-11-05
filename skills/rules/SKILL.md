@@ -1,10 +1,13 @@
 ---
 name: rules
-description: Maps the project's path-scoped rules into .agents/rules/ - short imperative instructions the harness injects when a matching file is read, plus the always-on ones (the agent's git limits). Use when the user asks to create or map rules, after the memory skill reports rule candidates, or when an area keeps getting edited wrong. Pass an area (a module, directory or subject) to write just that one.
-argument-hint: "[area]"
+description: Maps the project's path-scoped rules into .agents/rules/ - short imperative instructions the harness injects when a matching file is read, plus the always-on ones (the agent's git limits). Use when the user asks to create or map rules, after the memory skill reports rule candidates, or when an area keeps getting edited wrong. Pass an area (a module, directory or subject) to write just that one, --note <path> for one note's read rule, or --project <dir> for a sub-project.
+argument-hint: "[--project <dir>] [area | --note <path>]"
 ---
 
 # rules
+
+`/agent-leash:install` hands off to it as a full pass after the memory bootstrap;
+`/agent-leash:rules <area>` runs it in module mode.
 
 `.agents/rules/` (seen as `.claude/rules/`) holds instructions that apply to part of the
 repository and must arrive **before** the first wrong line. Every `.md` in there is
@@ -33,23 +36,31 @@ English kebab-case.
 
 ## Language of what you write
 
-The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
-line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
-do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-leash:install` does (propose from README, code comments and `git log` subjects,
-**confirm with the user**, add the line) before writing anything.
+The language of `.agents/` is settled as `/agent-leash:install` § Language says: read from the
+line under *Memory Catalog* in `AGENTS.md`, or proposed and confirmed with the user
+before anything is written.
 
 Every rule's text and heading go in that language, the commit policy included — its
 *message* language is a separate question you ask (below), not this one.
 
 ## Arguments
 
-- **No argument** — full pass: the always-on rules, the read rules (one per note that
-  owns an area, below), then one rule per area that has a candidate. Reviewing rules that already exist — dead globs, duplicates,
-  language — is `/agent-leash:update-rules`.
-- **An area** (`$ARGUMENTS`) — only that area's rule. Read its memory note first; if
-  there is none, run `/agent-leash:memory <area>` first or ask the user whether to write
-  the rule without one.
+- **No argument** — full pass (install, or `/agent-leash:update-rules` finding no `rules/commit.md`): — the always-on rules, the
+  read rules (one per note that owns an area, below), then one rule per area that has a
+  candidate. Reviewing rules that already exist — dead globs, duplicates, language — is
+  `/agent-leash:update-rules`.
+- **An area** (`$ARGUMENTS`) — only that area's rule: the read rule
+  over the note's `paths:`, plus what the area must obey. Given `--note <path>`, that
+  note is the one: a note without `paths:` owes no rule. Read its memory note first; if
+  there is none, `/agent-leash:memory <area>` writes it first, or ask the user whether to
+  write the rule without one. Sections it needs: Language, Rule or memory note?, Read
+  rules, Path-scoped rules, Report; skip the always-on rules and where candidates come
+  from.
+
+**Sub-project** (`--project <dir>`, `/agent-leash:install` § Sub-project) → globs relative to
+its folder, checked with `git ls-files` run in it. Same-repo: `rules/commit.md` is the
+link to the root's, so the commit-policy question is skipped; own-repo: asked as for a
+root.
 
 ## Rule or memory note?
 
@@ -68,7 +79,7 @@ If not, it stays a note.
 
 ## Where candidates come from
 
-1. **The memory report** — the rule candidates the `memory` skill listed.
+1. **The memory report** — the rule candidates `/agent-leash:memory` listed.
 2. **Existing notes** — each `module-*.md` / area note: the lines that are prohibitions
    or mandatory steps ("never", "always", "before X do Y") are the rule; the rest stays.
 3. **`AGENTS.md`** — an editing constraint that only applies to some files (a language,
@@ -85,7 +96,7 @@ If not, it stays a note.
 Paid in every session, so keep them to the few that apply to **any** file.
 
 **`rules/memory.md` — mandatory whenever `.agents/memory/` exists**, on any pass, with or
-without an area argument. It is the anti-drift rule: fix the note in the same task that
+without a module argument. It is the anti-drift rule: fix the note in the same task that
 made it wrong. If it is missing, create it — no need to ask, it carries no policy:
 
 ```bash
@@ -109,7 +120,7 @@ propose defaults that match the history:
   Propose what `git log --format=%B` shows: trailers already there → keep, none → off.
   Never decide it for the user.
 
-Ask them in the user's language — the one they write to you in — not in this skill's
+Ask them in the user's language — the one they write to you in — not in this procedure's
 English. Then write it as imperative bullets. Always include, whatever the answers:
 
 - never `git add -A` / `git add .` / `git add -u` — stage only the files of the change,
@@ -134,7 +145,7 @@ The co-author answer goes in two places, both always, so they never disagree:
   one there.
 
 The setting binds Claude Code only; the bullet reaches any other agent that reads
-`.agents/`. Edit only that key of `settings.json` — the rest is `update-hooks`' — and
+`.agents/`. Edit only that key of `settings.json` — the rest is `/agent-leash:update-hooks`'s — and
 stage it with the rule.
 
 If the answers carry a *why* worth keeping (a past incident, a team agreement), that goes
@@ -178,7 +189,8 @@ line into each (`domain` or `module`) before writing the rules.
   - <the area's prohibitions, mandatory steps or invariants, if any — none is fine>
   ```
 
-  For a note that is not a domain, the first line names just that note. A rule that is
+  For a note that is not a domain, the first line names just that note; for a pointer
+  note (`kind: pointer`), the doc its `doc:` names. A rule that is
   only the read order is complete; do not pad it with rules the area does not have.
 - **Globs may overlap** between read rules, unlike notes' `paths:`: a file in a module
   of a domain loads both rules and the agent reads both notes — which is the point.

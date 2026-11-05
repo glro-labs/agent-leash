@@ -7,12 +7,24 @@
 #                       targets master/main (by being on it or naming it in the refspec).
 #   secret-guard        blocks a `git commit` that adds an obvious secret: a private-key
 #                       header, a well-known token format, a `.env`/keystore file.
-#   memory-drift-guard  blocks a `git commit` that changes code covered by a note in
-#                       .agents/memory/ (its `paths:` frontmatter) when the note is not
-#                       in the same commit. SKIP_MEMORY_CHECK=1 in front when it still holds.
+#   memory-drift-guard  blocks a `git commit` that changes code covered by a note in a
+#                       .agents/memory/ of the repo, the root's or a sub-project's (its
+#                       `paths:` frontmatter), when the note is not in the same commit
+#                       (for a `kind: pointer` note, the note or its `doc:`).
+#                       SKIP_MEMORY_CHECK=1 in front when it still holds.
+#
+#   The project picks the checks: `/agent-leash:install` copies this file to
+#   .agents/hooks/guard.sh and registers it in .agents/settings.json, versioned.
+#   A check the team turned off is a flag on that command line: --no-master,
+#   --no-secret, --no-memory-drift.
 #
 # Fails OPEN: any internal error exits 0 so the session is never wedged.
 set -uo pipefail
+
+master=1 secret=1 drift=1
+for a in "$@"; do
+  case "$a" in --no-master) master=0 ;; --no-secret) secret=0 ;; --no-memory-drift) drift=0 ;; esac
+done
 
 payload="$(cat)" || exit 0
 # perl + JSON::PP, not jq: it ships with git on Windows (Git Bash) and Linux alike.
@@ -29,6 +41,12 @@ has_verb() {
   printf '%s' "$cmd" | grep -Eq \
     "(^|[^[:alnum:]_-])git([[:space:]]+(-[cC][[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+$1([[:space:]]|\$)"
 }
+
+# A leading `cd <dir> &&` (or `;`) moves the command, typically into a sub-project that is
+# a repo of its own: follow it first, as the shell will.
+d="$(printf '%s\n' "$cmd" | head -n 1 | sed -nE "s/^[[:space:]]*cd[[:space:]]+[\"']?([^\"'[:space:];&|]+)[\"']?[[:space:]]*(&&|;).*/\1/p")"
+case "$d" in '~'|'~/'*) d="$HOME${d#\~}" ;; esac
+[ -n "$d" ] && { cd "$d" 2>/dev/null || exit 0; }
 
 # `git -C <dir>` acts on another repo, so branch, index and notes are read there and not
 # in cwd. This process is disposable, so just move: every git call below follows. Each
@@ -63,10 +81,11 @@ if [ "$on_protected" = 1 ] && [[ $cmd =~ $new_branch ]]; then
 fi
 
 # A refspec naming master/main as the destination: `origin master`, `HEAD:master`,
-# `:main` (delete), `+master` (force). `master:staging` is not a write to master.
+# `:main` (delete), `+master` (force), `refs/heads/main`. `master:staging` is not a write to
+# master, nor is `fix/main`: a branch named after it, not main itself.
 # `--mirror`/`--all` push every ref, master included.
 names_protected() {
-  printf '%s' "$cmd" | grep -Eq '(^|[/:+ ])(master|main)([[:space:]]|$)' \
+  printf '%s' "$cmd" | grep -Eq '(^|[:+ ]|heads/)(master|main)([[:space:]]|$)' \
     || printf '%s' "$cmd" | grep -Eq -- '--(mirror|all)([[:space:]]|$)'
 }
 
@@ -84,13 +103,13 @@ writes_commit() {
 }
 
 # `commit` has no recovery mode, so a message containing `--abort` must not exempt it.
-if writes_commit && [ "$on_protected" = 1 ] && { [ "$verb" = commit ] || ! is_recovery; }; then
+if [ "$master" = 1 ] && writes_commit && [ "$on_protected" = 1 ] && { [ "$verb" = commit ] || ! is_recovery; }; then
   cat >&2 <<MSG
 BLOCKED by master-guard: you are on "$branch" and "git $verb" writes a commit there.
 
 Create a branch first, then commit there:
 
-  git switch -c <type>_<scope>_<description>
+  git switch -c <type>/<description>
 
 "$branch" only receives merges. If this really must land on "$branch", the user has
 to run the commit themselves.
@@ -98,7 +117,7 @@ MSG
   exit 2
 fi
 
-if has_verb merge && [ "$on_protected" = 1 ] && ! is_recovery; then
+if [ "$master" = 1 ] && has_verb merge && [ "$on_protected" = 1 ] && ! is_recovery; then
   cat >&2 <<MSG
 BLOCKED by master-guard: you are on "$branch" and this command merges.
 
@@ -108,7 +127,7 @@ MSG
   exit 2
 fi
 
-if has_verb reset && [ "$on_protected" = 1 ] \
+if [ "$master" = 1 ] && has_verb reset && [ "$on_protected" = 1 ] \
    && printf '%s' "$cmd" | grep -Eq -- '--hard([[:space:]]|$)'; then
   cat >&2 <<MSG
 BLOCKED by master-guard: "git reset --hard" on "$branch" throws away commits and
@@ -119,7 +138,7 @@ MSG
   exit 2
 fi
 
-if has_verb push && { [ "$on_protected" = 1 ] || names_protected; }; then
+if [ "$master" = 1 ] && has_verb push && { [ "$on_protected" = 1 ] || names_protected; }; then
   cat >&2 <<MSG
 BLOCKED by master-guard: this command pushes to master/main (current branch:
 "$branch").
@@ -160,11 +179,14 @@ env_hit="$(printf '%s\n' "$files" | grep -E '(^|/)\.env' | grep -Evi '\.(example
 # public certs (also `.pem`) from tripping the guard.
 key_hit="$(printf '%s\n' "$files" | grep -Ei '\.(p12|pfx|jks|keystore)$')"
 
-# Well-known token formats. Precise on purpose.
-patterns='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[opsur]_[0-9A-Za-z]{36}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{35}'
+# Well-known token formats. Precise on purpose: a prefix that names the service, never a
+# bare `eyJ` JWT, which fills test fixtures. Private key, AWS, GitHub, Slack, Google, GitLab
+# (personal, deploy, runner, trigger), Anthropic, OpenAI (project, service account, admin,
+# legacy), Stripe live secret and restricted keys (`sk_test_` is not a secret).
+patterns='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[opsur]_[0-9A-Za-z]{36}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{35}|gl(pat|dt|rt|ptt)-[0-9A-Za-z_-]{20,}|sk-ant-[0-9A-Za-z_-]{80,}|sk-(proj|svcacct|admin)-[0-9A-Za-z_-]{40,}|sk-[0-9A-Za-z]{20}T3BlbkFJ[0-9A-Za-z]{20}|[sr]k_live_[0-9A-Za-z]{24,}'
 tok_hit="$(printf '%s\n' "$added" | grep -Eo -- "$patterns" | sort -u)"
 
-if [ -n "$env_hit$key_hit$tok_hit" ]; then
+if [ "$secret" = 1 ] && [ -n "$env_hit$key_hit$tok_hit" ]; then
   {
     echo "BLOCKED by secret-guard: this commit would introduce what looks like a secret."
     echo
@@ -179,6 +201,7 @@ if [ -n "$env_hit$key_hit$tok_hit" ]; then
 fi
 
 # ---- memory-drift-guard -----------------------------------------------------------------
+[ "$drift" = 1 ] || exit 0
 printf '%s' "$cmd" | grep -Eq '(^|[[:space:]])SKIP_MEMORY_CHECK=1[[:space:]]' && exit 0
 
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -200,24 +223,41 @@ note_paths() {
        /^[^[:space:]]/ { p = 0 }' "$1"
 }
 
+# The `doc:` of a pointer note: the existing doc it stands for, which may come instead.
+note_doc() {
+  awk 'NR == 1 { if ($0 != "---") exit; next }
+       $0 == "---" { exit }
+       /^doc:/ { sub(/^doc:[[:space:]]*/, ""); gsub(/^["\047]|["\047][[:space:]]*$/, ""); print; exit }' "$1"
+}
+
 # Bash `*` already crosses `/`; a leading `**/` must also match at the root.
 matches() {
   [[ $1 == $2 ]] || { [[ $2 == '**/'* ]] && [[ $1 == ${2#'**/'} ]]; }
 }
 
+# Every note in the repo: the root's and each sub-project's. A sub-project's
+# `paths:` and `doc:` are relative to its own folder, so its files are matched with that
+# prefix taken off. A sub-project that is a repo of its own is not listed: its notes guard
+# its own commits.
+notes="$(git -C "$root" ls-files --cached --others --exclude-standard -- \
+  ':(glob).agents/memory/*.md' ':(glob)**/.agents/memory/*.md' 2>/dev/null | sort -u)"
 missing="$(
-  for note in "$root"/.agents/memory/*.md; do
+  while IFS= read -r rel; do
+    note="$root/$rel"
     [ -f "$note" ] || continue
-    rel=".agents/memory/${note##*/}"
+    pre="${rel%.agents/memory/*}"
     printf '%s\n' "$files" | grep -Fxq "$rel" && continue
+    doc="$(note_doc "$note")"
+    [ -n "$doc" ] && printf '%s\n' "$files" | grep -Fxq "$pre$doc" && continue
     globs="$(note_paths "$note")"
     [ -n "$globs" ] || continue
     while IFS= read -r f; do
+      case "$f" in "$pre"*) ;; *) continue ;; esac
       while IFS= read -r g; do
-        matches "$f" "$g" && { printf '  %s  <- %s\n' "$rel" "$f"; continue 3; }
+        matches "${f#"$pre"}" "$g" && { printf '  %s  <- %s\n' "$rel" "$f"; continue 3; }
       done <<< "$globs"
     done <<< "$files"
-  done
+  done <<< "$notes"
 )"
 [ -z "$missing" ] && exit 0
 

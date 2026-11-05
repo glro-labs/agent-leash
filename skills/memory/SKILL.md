@@ -1,26 +1,38 @@
 ---
 name: memory
-description: Maps a repository into the .agents/memory/ knowledge catalog - fills the root AGENTS.md with the non-negotiables, writes architecture/domain/module notes and the MEMORY.md index. Use when the user asks to map, build, extend or refresh the project's memory, when .agents/memory/MEMORY.md does not exist, or when the area a task touches has no note. Pass an area (a module, directory or subject) to map just that one.
-argument-hint: "[area]"
+description: Maps a repository into the .agents/memory/ knowledge catalog - fills the root AGENTS.md with the non-negotiables, adopts existing docs as pointer notes, writes architecture/domain/module notes and the MEMORY.md index. Use when the user asks to map, build, extend or refresh the project's memory, when .agents/memory/MEMORY.md does not exist, or when the area a task touches has no note. Pass an area (a module, directory or subject) to map just that one, --note <path> to deepen one note, or --project <dir> for a sub-project.
+argument-hint: "[--project <dir>] [area | --note <path>]"
 ---
 
 # memory
 
 Builds and extends the project's knowledge catalog. Mapping is reading — do not ask
 permission to read. **Ask before writing**, saying how many notes and which: the user may
-want a smaller cut.
+want a smaller cut. `/agent-leash:install` hands off to it as a bootstrap; `/agent-leash:memory
+<area>` runs it in module mode.
 
 ## Arguments
 
-- **No argument** — full bootstrap: phases 0–4 below, then phase 6. If the catalog
-  already exists, run only the phases whose output is missing; checking the notes that
-  exist against the code is `/agent-leash:update-memory`.
-- **An area** (`$ARGUMENTS`: a module, directory or subject) — phase 5 for that area
-  only, then phase 6 to hook the note into the index. Read `MEMORY.md` first: if a note
-  already covers the area, deepen that one instead of creating a sibling.
+- **No argument** — bootstrap (install, or `/agent-leash:update-memory` finding no `MEMORY.md`): — phases 0–4 below, then
+  phase 6. If the catalog already exists, run only the phases whose output is missing;
+  checking the notes that exist against the code is `/agent-leash:update-memory`.
+- **An area** (`$ARGUMENTS`: a directory, a named module or a feature that spans
+  folders) — module mode: phase 5
+  for that area only, then phase 6 to hook the note into the index. Read `MEMORY.md`
+  first: if a note already covers the area, deepen that one instead of creating a
+  sibling. Given `--note <path>` instead, deepen that note: its `paths:` are the area (its
+  subject, for a conceptual note). Sections it needs: Language, Three destinations, What makes a note worth
+  reading, Phase 5, Phase 6 (note format); skip phases 0–4 and the stopping criterion.
 
-Run `/agent-leash:install` first if `.agents/` does not exist. Settle the language
-(next section) before anything else.
+**Sub-project** (`--project <dir>`, `/agent-leash:install` § Sub-project) → that folder is the
+project: its `AGENTS.md`, its `.agents/`, every path and every `paths:` glob relative to
+it, as Claude Code resolves its rules and `memory-drift-guard` its notes. Run the
+commands in it. At the root, a sub-project's folder is not mapped: `architecture.md`
+names it in one line, pointing at its `AGENTS.md`, and no root note's `paths:` reach
+into it (`scripts/subprojects.sh` lists them).
+
+No `.agents/` yet → run `/agent-leash:install` first. Settle the language (next section) before
+anything else.
 
 **Before writing the first note**, make sure the anti-drift rule exists — a catalog
 without it rots silently between commits:
@@ -34,11 +46,9 @@ overwrite an existing one.
 
 ## Language of what you write
 
-The language of `.agents/` is a project fact, declared once in the root `AGENTS.md` (the
-line under *Memory Catalog* naming it, with a tag such as `pt-BR`) — read it from there,
-do not re-guess it. If `AGENTS.md` does not declare it yet, settle it the way
-`/agent-leash:install` does (propose from README, code comments and `git log` subjects,
-**confirm with the user**, add the line) before writing anything.
+The language of `.agents/` is settled as `/agent-leash:install` § Language says: read from the
+line under *Memory Catalog* in `AGENTS.md`, or proposed and confirmed with the user
+before anything is written.
 
 Every note, the index, the "back to the index" line and the `AGENTS.md` sections go in
 that language. The exception is the glossary's *terms*: they follow the language **the
@@ -56,7 +66,7 @@ into a note; the second is writing everything into `AGENTS.md`.
 | Destination | Loaded | What goes there |
 |---|---|---|
 | root `AGENTS.md` | **every** session | this project's facts, in few lines: target runtime, encoding, commands, what CI really runs |
-| `.agents/rules/` | when a file matching the rule's `paths:` is read | what to **obey** when editing that area — imperative, short (the `rules` skill writes these) |
+| `.agents/rules/` | when a file matching the rule's `paths:` is read | what to **obey** when editing that area — imperative, short (`/agent-leash:rules` writes these) |
 | `.agents/memory/` | when the agent decides to open the note | what to **understand** to decide — the why, the measurements, the traps already paid for |
 
 Rule and note differ in form, not subject: the same area yields a twenty-line rule and a
@@ -88,6 +98,10 @@ Before opening application code, take what metadata already gives. It answers ha
 questions at a fraction of the cost.
 
 - `README`, `docs/`, `CONTRIBUTING`, ADRs — read them, treat them as possibly stale.
+- **Knowledge already written down** — a per-class or per-module notes file, a plan with
+  status and logs, project skills, a design doc kept current. Do not re-map what such a
+  doc holds: adopt it as a **pointer note** (phase 6), and phases 3–5 cover only the
+  gaps. A doc that contradicts the code is not adopted: it is an open question.
 - **Dependency manifest** (`package.json`, `composer.json`, `go.mod`, `pom.xml`,
   `pyproject.toml`, `Gemfile`...): stack, target runtime and — most valuable — libraries
   that give the domain away. A payment gateway client, an invoicing SDK, an ERP
@@ -130,7 +144,7 @@ architecture on purpose: it is the phase that prevents damage. Survey, and write
   line.
 
 `AGENTS.md` shape (headings in the project's language; keep the memory section the
-install wrote):
+scaffold wrote):
 
 ```markdown
 # <Project> — Agent Guide
@@ -152,7 +166,7 @@ install wrote):
 
 What does not belong in `AGENTS.md` goes down to one of two places: **an editing
 constraint becomes a rule**, **an explanation becomes a note**. Note the rule candidates
-for the report at the end — the `rules` skill writes them.
+for the report at the end — `/agent-leash:rules` writes them.
 
 ## Phase 2 — Architecture and entry points → `architecture.md`
 
@@ -211,7 +225,7 @@ each with its own vocabulary and rules, usually its own directories or tables): 
   business rules where there are any, technical invariants where there are not. Its
   `paths:` declare the domain's code, so drift is caught at commit.
 - **A domain note declares itself** with `kind: domain` in its frontmatter. That line,
-  not the filename, is what the other skills look for, so a catalog whose notes are
+  not the filename, is what the other procedures look for, so a catalog whose notes are
   named otherwise still gets its domain rules. A note `domains.md` links to that is not
   a domain (a module inside one) says `kind: module`, so nobody asks again.
 - Every domain note gets a **domain rule** of the same name (`rules/<note>.md`)
@@ -278,11 +292,37 @@ Note format:
   touches the area without bringing the note along. One glob per line — the guard does
   not expand `{a,b}`. Globs of different notes should not overlap, or one file demands
   two notes. A conceptual note, with no area of its own, has no frontmatter. Declaring
-  `paths:` also owes the note a **read rule** over the same globs (the `rules` skill
+  `paths:` also owes the note a **read rule** over the same globs (`/agent-leash:rules`
   writes it), so the agent reads the note at the first Read in the area, not only at
   commit.
 - A domain note also says `kind: domain` there (a module note inside a domain,
   `kind: module`) — see the domains phase. It goes in even when the note has no `paths:`.
+- A **pointer note** (`kind: pointer`) stands for a doc that already exists in the repo
+  (phase 0): `doc:` names it, `paths:` the code it describes, and the body is two or
+  three lines — what the doc covers and when to read it. It is listed in the index like
+  any note and owes the same read rule. `memory-drift-guard` accepts the doc or the
+  pointer note in the commit, so keeping the doc current is enough. Propose it in the
+  same ask as the other notes, never left for a later `update`, and show how often the
+  area's commits already bring the doc along:
+
+  ```bash
+  bash "${CLAUDE_PLUGIN_ROOT}/scripts/coupling.sh" docs/class-notes.md "src/models/**"
+  # → 92 of 141 commits touching src/models/** also touched docs/class-notes.md; the guard would have blocked 49
+  ```
+
+  A low figure means the guard will block often: say so, and let the user choose
+  narrower `paths:` or no `paths:` at all.
+
+  ```markdown
+  ---
+  kind: pointer
+  doc: "docs/class-notes.md"
+  paths:
+    - "src/models/**"
+  ---
+
+  # Model classes
+  ```
 
   ```markdown
   ---
@@ -305,6 +345,10 @@ Note format:
 - **Phases 3–5 are fan-out:** launch the `agent-leash:explorer` agent in parallel, one per
   module or area. It is exactly the case subagents are for — reads a lot, concludes
   little.
+- **Small repo, no fan-out.** Fewer than three modules, or under about 20k lines of
+  code (`git ls-files | xargs wc -l` minus vendored and generated files) → phases 3–5
+  stay in the main flow too: each explorer starts cold and re-reads what you already
+  have, which costs more than it saves at that size.
 - **The explorer reports, you write.** It does not edit memory on purpose: the main flow
   sees the whole catalog and knows whether a fact goes into a new note or an existing one.
 - **Never in parallel with code edits.** Mapping is reading; mixing the two yields notes
@@ -322,7 +366,7 @@ knowledge.
 At the end: notes created/extended, what went into `AGENTS.md`, the open questions still
 unanswered, the **read rules** owed (one per `kind: domain` note, with the domain's globs,
 and one per other note with `paths:`, with those globs), and the
-**rule candidates** (area + one line each) — offer `/agent-leash:rules` for them.
+**rule candidates** (area + one line each) — `/agent-leash:rules` writes them next.
 
 ## Maintenance
 
